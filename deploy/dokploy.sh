@@ -27,7 +27,7 @@ call() { # call <endpoint> <json>
   printf '%s' "$out"
 }
 
-json() { node -e 'process.stdout.write(JSON.stringify(Object.fromEntries(process.argv.slice(1).map(a=>{const i=a.indexOf("=");let v=a.slice(i+1);if(v==="true"||v==="false")v=v==="true";else if(/^\d+$/.test(v))v=+v;return[a.slice(0,i),v]}))))' "$@"; }
+json() { node -e 'process.stdout.write(JSON.stringify(Object.fromEntries(process.argv.slice(1).map(a=>{const i=a.indexOf("=");let v=a.slice(i+1);if(v==="true"||v==="false")v=v==="true";else if(v==="null")v=null;else if(/^[\[{]/.test(v))v=JSON.parse(v);else if(/^\d+$/.test(v))v=+v;return[a.slice(0,i),v]}))))' "$@"; }
 
 build_env() {
   local line key val out=""
@@ -41,18 +41,20 @@ build_env() {
 }
 
 setup() {
-  local res app_id
-  res=$(call application.create "$(json name="$APP_NAME" appName="$APP_NAME" environmentId="$DOKPLOY_ENVIRONMENT_ID")") \
-    || res=$(call application.create "$(json name="$APP_NAME" appName="$APP_NAME" projectId="$DOKPLOY_PROJECT_ID")")
-  app_id=$(node -e 'const r=JSON.parse(process.argv[1]);process.stdout.write(r.applicationId||r.application?.applicationId||"")' "$res")
-  [[ -n $app_id ]] || { echo "No applicationId in response: $res" >&2; exit 1; }
+  local res app_id=${DOKPLOY_APP_ID:-}
+  if [[ -z $app_id ]]; then # reuse an existing app so a retried setup doesn't create duplicates
+    res=$(call application.create "$(json name="$APP_NAME" appName="$APP_NAME" environmentId="$DOKPLOY_ENVIRONMENT_ID")") \
+      || res=$(call application.create "$(json name="$APP_NAME" appName="$APP_NAME" projectId="$DOKPLOY_PROJECT_ID")")
+    app_id=$(node -e 'const r=JSON.parse(process.argv[1]);process.stdout.write(r.applicationId||r.application?.applicationId||"")' "$res")
+    [[ -n $app_id ]] || { echo "No applicationId in response: $res" >&2; exit 1; }
+  fi
   echo "applicationId=$app_id" >&2
 
   call application.saveGitProvider "$(json applicationId="$app_id" customGitUrl="$GIT_URL" \
-    customGitBranch="$GIT_BRANCH" customGitBuildPath=/ enableSubmodules=false)" >/dev/null
+    customGitBranch="$GIT_BRANCH" customGitBuildPath=/ enableSubmodules=false watchPaths=[])" >/dev/null
   call application.saveBuildType "$(json applicationId="$app_id" buildType=dockerfile \
-    dockerfile=Dockerfile dockerContextPath=. dockerBuildStage=)" >/dev/null
-  call application.saveEnvironment "$(json applicationId="$app_id" env="$(build_env)")" >/dev/null
+    dockerfile=Dockerfile dockerContextPath=. dockerBuildStage= herokuVersion=null railpackVersion=null)" >/dev/null
+  call application.saveEnvironment "$(json applicationId="$app_id" env="$(build_env)" buildArgs= buildSecrets= createEnvFile=true)" >/dev/null
   call domain.create "$(json applicationId="$app_id" host="$DOMAIN" port="$PORT" https=true \
     certificateType=letsencrypt path=/ stripPath=false domainType=application)" >/dev/null
   if [[ -n ${VOLUME_PATH:-} ]]; then
