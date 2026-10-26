@@ -8,6 +8,13 @@ import {
   markNext,
   toggleDay,
 } from "./challenges";
+import {
+  removeSubscription,
+  saveSubscription,
+  sendToUser,
+  setReminder,
+  type PushSubscriptionJSON,
+} from "./push";
 
 export async function createChallengeAction(formData: FormData) {
   const user = await requireUser();
@@ -42,4 +49,40 @@ export async function deleteChallengeAction(challengeId: string) {
   deleteChallenge(challengeId, user.id);
   revalidatePath("/app");
   redirect("/app");
+}
+
+export async function enableRemindersAction(
+  sub: PushSubscriptionJSON,
+  time: string,
+  tz: string,
+) {
+  const user = await requireUser();
+  if (!sub?.endpoint?.startsWith("https://") || !sub.keys?.p256dh || !sub.keys?.auth) {
+    throw new Error("Suscripción inválida");
+  }
+  saveSubscription(user.id, sub);
+  setReminder(user.id, time, tz);
+  revalidatePath("/app");
+}
+
+export async function updateReminderTimeAction(time: string, tz: string) {
+  const user = await requireUser();
+  setReminder(user.id, time, tz);
+  revalidatePath("/app");
+}
+
+export async function disableRemindersAction(endpoint: string) {
+  const user = await requireUser();
+  removeSubscription(user.id, endpoint);
+  revalidatePath("/app");
+}
+
+export async function testReminderAction(): Promise<number> {
+  const user = await requireUser();
+  return sendToUser(user.id, {
+    title: "🔥 ¡Así te avisaré!",
+    body: "Cada día a tu hora, si aún no marcaste tu reto.",
+    url: "/app",
+    tag: "test",
+  });
 }

@@ -32,6 +32,30 @@ function create(): Database.Database {
       doneAt      TEXT NOT NULL,
       PRIMARY KEY (challengeId, day)
     );
+
+    -- Small key/value store (e.g. auto-generated VAPID keys).
+    CREATE TABLE IF NOT EXISTS kv (
+      key   TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
+
+    -- Web Push subscriptions, one per device/browser.
+    CREATE TABLE IF NOT EXISTS push_sub (
+      endpoint  TEXT PRIMARY KEY,
+      userId    TEXT NOT NULL,
+      p256dh    TEXT NOT NULL,
+      auth      TEXT NOT NULL,
+      createdAt TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_push_sub_user ON push_sub(userId);
+
+    -- Daily reminder settings per user. time is local "HH:MM" in tz.
+    CREATE TABLE IF NOT EXISTS reminder (
+      userId       TEXT PRIMARY KEY,
+      time         TEXT NOT NULL,
+      tz           TEXT NOT NULL,
+      lastSentDate TEXT
+    );
   `);
   return db;
 }

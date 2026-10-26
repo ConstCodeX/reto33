@@ -13,6 +13,9 @@ Built with Next.js (App Router) + better-auth (email OTP) + SQLite.
 - **Multiple challenges** — each with tangible / intangible / grand rewards.
 - **Duolingo-style UI** — Nunito, chunky 3D buttons, streak flame & XP, a flame
   mascot, light & dark, safe-area aware.
+- **Daily reminders** — push notifications on your phone at the time you pick,
+  only if you haven't marked your challenge that day yet.
+- **Responsive** — phone first; two-column layouts on tablet and desktop.
 - **Installable PWA** — add to Home Screen, runs standalone.
 
 ## OTP modes
@@ -57,6 +60,21 @@ Icons are pre-generated in `public/`. To regenerate: `npm run gen-icons`.
 
 Once it's running, redeploys can be triggered from Claude via your Dokploy MCP
 connector (`deploy_application`).
+
+## Reminders (Web Push)
+
+Turn them on from the "Recordatorio diario" card on the home screen and pick a
+time. A scheduler inside the server checks every minute and sends at most one
+reminder per day, only when a challenge hasn't been marked that day (in the
+user's own time zone).
+
+VAPID keys are generated on first boot and stored in the SQLite database, so
+there is nothing to configure. To pin your own instead, set `VAPID_PUBLIC_KEY`,
+`VAPID_PRIVATE_KEY` and optionally `VAPID_SUBJECT` (an `https:` or `mailto:` URL).
+
+On **iPhone** (iOS 16.4+) notifications only work once the app is added to the
+Home Screen and opened from there; the card explains this. Android and desktop
+browsers work directly.
 
 ## Install as an app
 

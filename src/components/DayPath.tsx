@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react";
 import { markNextAction, toggleDayAction } from "@/lib/actions";
 import { Mascot } from "./Mascot";
 
@@ -16,10 +16,14 @@ export function DayPath({
   id,
   total,
   initialDays,
+  header,
+  aside,
 }: {
   id: string;
   total: number;
   initialDays: number[];
+  header?: ReactNode;
+  aside?: ReactNode;
 }) {
   const [days, setDays] = useState<Set<number>>(new Set(initialDays));
   const [toast, setToast] = useState<{ key: number; text: string } | null>(null);
@@ -69,19 +73,47 @@ export function DayPath({
   }
 
   return (
-    <div className="stack gap-20">
+    <div className="cl">
       {toast && <div key={toast.key} className="toast">{toast.text}</div>}
 
-      <div className="row gap-14">
-        <div className="bar" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={done}>
-          <i style={{ width: `${(done / total) * 100}%` }} />
-        </div>
-        <span className={`stat fire ${done ? "" : "off"}`}>🔥 {done}</span>
-      </div>
+      <div className="cl-side">
+        <div className="cl-head stack gap-20">
+          {header}
+          <div className="row gap-14">
+            <div className="bar" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={done}>
+              <i style={{ width: `${(done / total) * 100}%` }} />
+            </div>
+            <span className={`stat fire ${done ? "" : "off"}`}>🔥 {done}</span>
+          </div>
 
-      <div className={`unit ${complete ? "complete" : ""}`}>
-        <small>{complete ? "Reto completado" : `Día ${nextDay} de ${total}`}</small>
-        <b>{complete ? "¡Lo lograste! 🏆" : done === 0 ? "¡Empieza tu racha hoy!" : "¡Sigue así, vas genial!"}</b>
+          <div className={`unit ${complete ? "complete" : ""}`}>
+            <small>{complete ? "Reto completado" : `Día ${nextDay} de ${total}`}</small>
+            <b>{complete ? "¡Lo lograste! 🏆" : done === 0 ? "¡Empieza tu racha hoy!" : "¡Sigue así, vas genial!"}</b>
+          </div>
+        </div>
+
+        <div className="dock">
+          <div className="dock-inner">
+            {complete ? (
+              <div className="row gap-14 celebrate" style={{ justifyContent: "center" }}>
+                <Mascot size={56} mood="party" />
+                <div className="stack" style={{ textAlign: "left" }}>
+                  <span style={{ fontSize: 18 }}>¡Reto completado!</span>
+                  <span style={{ opacity: 0.9, fontSize: 14 }}>33 días. Lo lograste.</span>
+                </div>
+              </div>
+            ) : (
+              <button className="btn btn-primary" onClick={markToday} disabled={nextDay == null}>
+                Marcar día {nextDay}
+              </button>
+            )}
+            <p className="muted center" style={{ fontSize: 12, margin: "10px 0 0" }}>
+              Toca cualquier día del camino para ajustarlo.
+            </p>
+          </div>
+        </div>
+
+        {aside && <div className="cl-aside">{aside}</div>}
       </div>
 
       <div className="path">
@@ -94,7 +126,7 @@ export function DayPath({
             .filter(Boolean)
             .join(" ");
           return (
-            <div key={day} style={{ transform: `translateX(${offset(i)}px)`, paddingBottom: 18 }}>
+            <div key={day} className="path-step" style={{ ["--o" as string]: offset(i) }}>
               <button
                 ref={isNext ? nextRef : undefined}
                 className={cls}
@@ -109,25 +141,6 @@ export function DayPath({
             </div>
           );
         })}
-      </div>
-
-      <div className="dock">
-        {complete ? (
-          <div className="row gap-14 celebrate" style={{ justifyContent: "center" }}>
-            <Mascot size={56} mood="party" />
-            <div className="stack" style={{ textAlign: "left" }}>
-              <span style={{ fontSize: 18 }}>¡Reto completado!</span>
-              <span style={{ opacity: 0.9, fontSize: 14 }}>33 días. Lo lograste.</span>
-            </div>
-          </div>
-        ) : (
-          <button className="btn btn-primary" onClick={markToday} disabled={nextDay == null}>
-            Marcar día {nextDay}
-          </button>
-        )}
-        <p className="muted center" style={{ fontSize: 12, margin: "10px 0 0" }}>
-          Toca cualquier día del camino para ajustarlo.
-        </p>
       </div>
     </div>
   );

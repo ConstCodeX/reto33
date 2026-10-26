@@ -1,6 +1,7 @@
 // Minimal service worker: makes the app installable and gives a fast,
-// offline-tolerant shell. Never caches auth or API responses.
-const CACHE = "reto33-v1";
+// offline-tolerant shell, and shows push reminders. Never caches auth or API
+// responses.
+const CACHE = "reto33-v2";
 const SHELL = ["/app", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", (event) => {
@@ -41,5 +42,37 @@ self.addEventListener("fetch", (event) => {
           return res;
         }),
     ),
+  );
+});
+
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {}
+  event.waitUntil(
+    self.registration.showNotification(data.title || "Reto 33", {
+      body: data.body || "",
+      icon: "/icon-192.png",
+      badge: "/icon-192.png",
+      tag: data.tag || "reto33",
+      renotify: true,
+      data: { url: data.url || "/app" },
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = new URL(event.notification.data?.url || "/app", self.location.origin).href;
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((wins) => {
+      for (const w of wins) {
+        if (w.url.startsWith(self.location.origin) && "focus" in w) {
+          return w.navigate(url).then((c) => (c || w).focus());
+        }
+      }
+      return self.clients.openWindow(url);
+    }),
   );
 });

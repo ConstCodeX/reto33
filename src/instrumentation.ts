@@ -1,5 +1,6 @@
 // Runs once when the server starts (Next instrumentation hook). Creates the
-// better-auth tables and the app tables so the app is ready on first request.
+// better-auth tables and the app tables so the app is ready on first request,
+// then starts the daily push-reminder scheduler.
 export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
   const { getMigrations } = await import("better-auth/db/migration");
@@ -8,4 +9,6 @@ export async function register() {
   const { runMigrations } = await getMigrations(auth.options);
   await runMigrations();
   console.log("✓ Reto 33 database ready");
+  const { startReminderScheduler } = await import("./lib/push");
+  startReminderScheduler();
 }
