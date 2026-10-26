@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/session";
 import { createChallengeAction } from "@/lib/actions";
+import { HabitPicker } from "@/components/HabitPicker";
+import { Mascot } from "@/components/Mascot";
 
 export const dynamic = "force-dynamic";
 
@@ -9,29 +11,22 @@ export default async function NewChallenge() {
   return (
     <main className="shell">
       <div className="appbar">
-        <Link href="/app" className="btn btn-ghost btn-sm">‹ Atrás</Link>
-        <span className="brand">Nuevo reto</span>
-        <span style={{ width: 54 }} />
+        <Link href="/app" className="btn btn-ghost btn-sm" aria-label="Cerrar" style={{ fontSize: 20, color: "var(--text-faint)" }}>
+          ✕
+        </Link>
+        <div className="bar"><i style={{ width: "10%" }} /></div>
       </div>
 
       <form action={createChallengeAction} className="stack gap-20">
-        <div className="card stack gap-14">
-          <label className="field">
-            <span>Mi nuevo hábito</span>
-            <input
-              name="habit"
-              placeholder="Ej. Leer 10 minutos, meditar, correr…"
-              maxLength={80}
-              required
-              autoFocus
-            />
-          </label>
+        <div className="row gap-14">
+          <Mascot size={72} />
+          <div className="bubble">¿Qué hábito quieres construir?</div>
         </div>
 
+        <HabitPicker />
+
         <div className="card stack gap-14">
-          <p className="muted" style={{ margin: "0 0 2px", fontSize: 13, fontWeight: 560 }}>
-            Tus recompensas (opcional)
-          </p>
+          <h2 style={{ fontSize: 17 }}>Tus recompensas <span className="muted">(opcional)</span></h2>
           <label className="field">
             <span>🎁 Recompensa tangible</span>
             <input name="tangible" placeholder="Un capricho físico al terminar" maxLength={140} />

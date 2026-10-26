@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { Mascot } from "@/components/Mascot";
 
 export default function SignIn() {
   const router = useRouter();
@@ -54,15 +55,19 @@ export default function SignIn() {
 
   return (
     <main className="shell" style={{ minHeight: "100dvh", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-      <div className="stack gap-6 center" style={{ marginBottom: 28 }}>
-        <div style={{ fontSize: 52 }}>◎</div>
-        <h1>Reto 33</h1>
-        <p className="muted" style={{ margin: 0 }}>
-          Crea un hábito nuevo en 33 días.
-        </p>
+      <div className="stack gap-14" style={{ alignItems: "center", marginBottom: 28 }}>
+        <span className="brand" style={{ fontSize: 30 }}>reto33</span>
+        <div className="row gap-14">
+          <Mascot size={92} className="wiggle" />
+          <div className="bubble">
+            {step === "email"
+              ? "¡Hola! Crea un hábito nuevo en 33 días."
+              : "¡Revisa tu correo! Te mandé un código."}
+          </div>
+        </div>
       </div>
 
-      <div className="card stack gap-14">
+      <div className="stack gap-14">
         {step === "email" ? (
           <form onSubmit={sendCode} className="stack gap-14">
             <label className="field">
@@ -81,7 +86,7 @@ export default function SignIn() {
             <button className="btn btn-primary" disabled={busy || !email}>
               {busy ? "Enviando…" : "Enviar código"}
             </button>
-            <p className="muted center" style={{ fontSize: 12.5, margin: 0 }}>
+            <p className="muted center" style={{ fontSize: 14, margin: 0 }}>
               Sin contraseñas. Te mandamos un código de 6 dígitos.
             </p>
           </form>
@@ -123,11 +128,7 @@ export default function SignIn() {
             </button>
           </form>
         )}
-        {error && (
-          <p className="center" style={{ color: "#ff453a", fontSize: 13, margin: 0 }}>
-            {error}
-          </p>
-        )}
+        {error && <p className="error center">{error}</p>}
       </div>
     </main>
   );

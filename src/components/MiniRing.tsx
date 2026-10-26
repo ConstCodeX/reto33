@@ -2,54 +2,41 @@
 export function MiniRing({
   done,
   total,
-  size = 60,
+  size = 64,
 }: {
   done: number;
   total: number;
   size?: number;
 }) {
-  const stroke = 6;
+  const stroke = 8;
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const pct = total ? Math.min(done / total, 1) : 0;
   const complete = done >= total;
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ flex: "none" }}>
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--locked)" strokeWidth={stroke} />
       <circle
         cx={size / 2}
         cy={size / 2}
         r={r}
         fill="none"
-        stroke="var(--fill-2)"
-        strokeWidth={stroke}
-      />
-      <circle
-        cx={size / 2}
-        cy={size / 2}
-        r={r}
-        fill="none"
-        stroke={complete ? "var(--good)" : "url(#mg)"}
+        stroke={complete ? "var(--gold)" : "var(--green)"}
         strokeWidth={stroke}
         strokeLinecap="round"
         strokeDasharray={`${c * pct} ${c}`}
         transform={`rotate(-90 ${size / 2} ${size / 2})`}
       />
-      <defs>
-        <linearGradient id="mg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="var(--accent)" />
-          <stop offset="1" stopColor="var(--accent-2)" />
-        </linearGradient>
-      </defs>
       <text
         x="50%"
         y="50%"
         dominantBaseline="central"
         textAnchor="middle"
-        fontSize={size * 0.26}
-        fontWeight={700}
-        fill="var(--text)"
+        fontSize={complete ? size * 0.36 : size * 0.3}
+        fontWeight={800}
+        fill="var(--text-strong)"
       >
-        {done}
+        {complete ? "🏆" : done}
       </text>
     </svg>
   );

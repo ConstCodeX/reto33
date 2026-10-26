@@ -16,9 +16,18 @@ export const env = {
   // OTP delivery: "demo" (show code on screen), "resend", or "smtp".
   otpDelivery: (process.env.OTP_DELIVERY || "demo").toLowerCase(),
 
-  // Resend (only used when OTP_DELIVERY=resend)
+  // Resend (only used when OTP_DELIVERY=resend). EMAIL_FROM is also used by smtp.
   resendApiKey: process.env.RESEND_API_KEY || "",
   emailFrom: process.env.EMAIL_FROM || "Reto 33 <onboarding@resend.dev>",
+
+  // SMTP (only used when OTP_DELIVERY=smtp). Port 465 implies TLS.
+  smtp: {
+    host: process.env.SMTP_HOST || "",
+    port: Number(process.env.SMTP_PORT || 587),
+    secure: (process.env.SMTP_SECURE || String(process.env.SMTP_PORT === "465")) === "true",
+    user: process.env.SMTP_USER || "",
+    pass: process.env.SMTP_PASS || "",
+  },
 };
 
 export const isDemo = env.otpDelivery === "demo";

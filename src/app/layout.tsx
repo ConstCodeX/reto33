@@ -4,7 +4,7 @@ import { PwaRegister } from "@/components/PwaRegister";
 
 export const metadata: Metadata = {
   title: "Reto 33",
-  description: "Crea un hábito nuevo en 33 días. Un círculo, un día a la vez.",
+  description: "Crea un hábito nuevo en 33 días. Un día a la vez, sin romper la racha.",
   manifest: "/manifest.webmanifest",
   applicationName: "Reto 33",
   appleWebApp: {
@@ -24,8 +24,8 @@ export const viewport: Viewport = {
   maximumScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#000000" },
-    { media: "(prefers-color-scheme: light)", color: "#fbfbfd" },
+    { media: "(prefers-color-scheme: dark)", color: "#131f24" },
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
   ],
 };
 
@@ -36,6 +36,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap"
+        />
+      </head>
       <body>
         {children}
         <PwaRegister />
