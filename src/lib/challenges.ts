@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { db } from "./db";
+import { isChallengeDay, nextUnmarkedDay } from "./challenge-days";
 
 export const CHALLENGE_LENGTH = 33;
 
@@ -58,11 +59,16 @@ export function createChallenge(
 }
 
 export function listChallenges(userId: string): ChallengeWithProgress[] {
-  const rows = q.byUser.all(userId) as Challenge[];
-  return rows.map((c) => {
-    const days = (q.marks.all(c.id) as { day: number }[]).map((r) => r.day);
-    return { ...c, days, done: days.length };
-  });
+  return (q.byUser.all(userId) as Challenge[]).map(withProgress);
+}
+
+function markedDays(id: string): number[] {
+  return (q.marks.all(id) as { day: number }[]).map(({ day }) => day);
+}
+
+function withProgress(challenge: Challenge): ChallengeWithProgress {
+  const days = markedDays(challenge.id);
+  return { ...challenge, days, done: days.length };
 }
 
 export function getChallenge(
@@ -70,9 +76,7 @@ export function getChallenge(
   userId: string,
 ): ChallengeWithProgress | null {
   const c = q.one.get(id, userId) as Challenge | undefined;
-  if (!c) return null;
-  const days = (q.marks.all(c.id) as { day: number }[]).map((r) => r.day);
-  return { ...c, days, done: days.length };
+  return c ? withProgress(c) : null;
 }
 
 function refreshCompletion(id: string, lengthDays: number) {
@@ -82,35 +86,31 @@ function refreshCompletion(id: string, lengthDays: number) {
 }
 
 /** Toggle one day on/off. Returns the new marked-days array. */
-export function toggleDay(id: string, userId: string, day: number): number[] | null {
+export const toggleDay = db.transaction((id: string, userId: string, day: number): number[] | null => {
   const c = q.one.get(id, userId) as Challenge | undefined;
-  if (!c) return null;
-  if (day < 1 || day > c.lengthDays) return null;
+  if (!c || !isChallengeDay(day, c.lengthDays)) return null;
   const exists = q.hasDay.get(id, day);
   if (exists) q.removeDay.run(id, day);
   else q.addDay.run(id, day, new Date().toISOString());
   refreshCompletion(id, c.lengthDays);
-  return (q.marks.all(id) as { day: number }[]).map((r) => r.day);
-}
+  return markedDays(id);
+}).immediate;
 
 /** Mark the next unmarked day (one-tap "done today"). */
-export function markNext(id: string, userId: string): number[] | null {
+export const markNext = db.transaction((id: string, userId: string): number[] | null => {
   const c = q.one.get(id, userId) as Challenge | undefined;
   if (!c) return null;
-  const marked = new Set((q.marks.all(id) as { day: number }[]).map((r) => r.day));
-  for (let d = 1; d <= c.lengthDays; d++) {
-    if (!marked.has(d)) {
-      q.addDay.run(id, d, new Date().toISOString());
-      refreshCompletion(id, c.lengthDays);
-      break;
-    }
-  }
-  return (q.marks.all(id) as { day: number }[]).map((r) => r.day);
-}
+  const days = markedDays(id);
+  const day = nextUnmarkedDay(days, c.lengthDays);
+  if (day === undefined) return days;
+  q.addDay.run(id, day, new Date().toISOString());
+  refreshCompletion(id, c.lengthDays);
+  return markedDays(id);
+}).immediate;
 
-export function deleteChallenge(id: string, userId: string) {
+export const deleteChallenge = db.transaction((id: string, userId: string) => {
   const c = q.one.get(id, userId) as Challenge | undefined;
   if (!c) return;
   q.delMarks.run(id);
   q.del.run(id, userId);
-}
+}).immediate;
